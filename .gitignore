@@ -1,0 +1,12 @@
+# Local build and generation tooling
+ai-tools/
+work/
+.img2threejs/
+
+# Preserve the full-resolution source locally; the website uses the lite GLB.
+models/feitian-dancer.glb
+
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>敦煌·灵境</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            font-family: 'STSong', '宋体', serif;
+            color: #F5EEDC;
+            overflow: hidden;
+            background: #2a1410;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== 壁画质感背景 ===== */
+        .bg-canvas {
+            position: fixed; inset: 0; z-index: 0; overflow: hidden;
+            background:
+                radial-gradient(ellipse 60% 45% at 50% 45%,
+                    rgba(180,120,80,0.5) 0%, rgba(140,80,50,0.32) 40%,
+                    rgba(70,35,22,0.15) 70%, transparent 90%),
+                radial-gradient(ellipse 100% 60% at 50% 100%,
+                    rgba(90,45,30,0.6) 0%, transparent 70%),
+                linear-gradient(180deg, #3d1f14 0%, #4a2618 30%, #3a1e13 70%, #2a1410 100%);
+        }
+        .bg-canvas::after {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                repeating-linear-gradient(0deg,
+                    rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px,
+                    transparent 1px, transparent 4px),
+                repeating-linear-gradient(90deg,
+                    rgba(255,220,160,0.03) 0px, rgba(255,220,160,0.03) 1px,
+                    transparent 1px, transparent 5px);
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+
+        /* ===== 中央佛光 ===== */
+        .halo-rays {
+            position: fixed; top: 50%; left: 50%;
+            width: 120vmax; height: 120vmax;
+            margin: -60vmax 0 0 -60vmax;
+            z-index: 1; pointer-events: none;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg, rgba(201,169,110,0.07) 8deg,
+                transparent 16deg, transparent 22deg,
+                rgba(201,169,110,0.07) 30deg, transparent 38deg,
+                transparent 44deg, rgba(201,169,110,0.07) 52deg,
+                transparent 60deg, transparent 66deg,
+                rgba(201,169,110,0.07) 74deg, transparent 82deg,
+                transparent 88deg, rgba(201,169,110,0.07) 96deg,
+                transparent 104deg, transparent 110deg,
+                rgba(201,169,110,0.07) 118deg, transparent 126deg,
+                transparent 132deg, rgba(201,169,110,0.07) 140deg,
+                transparent 148deg, transparent 154deg,
+                rgba(201,169,110,0.07) 162deg, transparent 170deg,
+                transparent 176deg, rgba(201,169,110,0.07) 184deg,
+                transparent 192deg, transparent 198deg,
+                rgba(201,169,110,0.07) 206deg, transparent 214deg,
+                transparent 220deg, rgba(201,169,110,0.07) 228deg,
+                transparent 236deg, transparent 242deg,
+                rgba(201,169,110,0.07) 250deg, transparent 258deg,
+                transparent 264deg, rgba(201,169,110,0.07) 272deg,
+                transparent 280deg, transparent 286deg,
+                rgba(201,169,110,0.07) 294deg, transparent 302deg,
+                transparent 308deg, rgba(201,169,110,0.07) 316deg,
+                transparent 324deg, transparent 330deg,
+                rgba(201,169,110,0.07) 338deg, transparent 346deg,
+                transparent 352deg, rgba(201,169,110,0.07) 360deg
+            );
+            border-radius: 50%;
+            animation: raysRotate 120s linear infinite;
+        }
+        @keyframes raysRotate { to { transform: rotate(360deg); } }
+
+        .halo-glow {
+            position: fixed; top: 50%; left: 50%;
+            width: 70vmin; height: 70vmin;
+            margin: -35vmin 0 0 -35vmin;
+            z-index: 1; pointer-events: none;
+            background: radial-gradient(circle,
+                rgba(255,220,160,0.28) 0%,
+                rgba(201,169,110,0.18) 22%,
+                rgba(201,169,110,0.09) 42%,
+                rgba(201,169,110,0.03) 62%,
+                transparent 80%);
+            border-radius: 50%;
+            animation: haloBreath 5s ease-in-out infinite;
+        }
+        @keyframes haloBreath {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.08); opacity: 1; }
+        }
+
+        .halo-ring {
+            position: fixed; top: 50%; left: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(201,169,110,0.2);
+            z-index: 1; pointer-events: none;
+            animation: ringBreath 5s ease-in-out infinite;
+        }
+        .ring-1 {
+            width: 34vmin; height: 34vmin;
+            margin: -17vmin 0 0 -17vmin;
+            border-color: rgba(255,220,160,0.4);
+        }
+        .ring-2 {
+            width: 48vmin; height: 48vmin;
+            margin: -24vmin 0 0 -24vmin;
+            border-color: rgba(201,169,110,0.22);
+            animation-delay: 0.5s;
+        }
+        .ring-3 {
+            width: 62vmin; height: 62vmin;
+            margin: -31vmin 0 0 -31vmin;
+            border-color: rgba(201,169,110,0.1);
+            animation-delay: 1s;
+        }
+        @keyframes ringBreath {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* ===== 光点层 ===== */
+        .sparkles {
+            position: fixed; inset: 0;
+            z-index: 2; pointer-events: none; overflow: hidden;
+        }
+        .sparkle {
+            position: absolute;
+            width: 4px; height: 4px;
+            border-radius: 50%;
+            background: #F0D99C;
+            box-shadow:
+                0 0 6px rgba(255,220,160,0.95),
+                0 0 12px rgba(201,169,110,0.6);
+            animation: sparkleTwinkle ease-in-out infinite;
+        }
+        @keyframes sparkleTwinkle {
+            0%, 100% { opacity: 0.15; transform: scale(0.6); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* ===== 花瓣层 ===== */
+        .petals-layer {
+            position: fixed; inset: 0;
+            z-index: 3; pointer-events: none; overflow: hidden;
+        }
+        .petal {
+            position: absolute;
+            top: -40px;
+            opacity: 0.85;
+            animation: petalFall linear infinite;
+            will-change: transform;
+        }
+        @keyframes petalFall {
+            0% { transform: translate(0, -40px) rotate(0deg) scale(0.7); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translate(var(--sway, 30px), 50vh) rotate(180deg) scale(1); opacity: 0.85; }
+            90% { opacity: 0.6; }
+            100% { transform: translate(calc(var(--sway, 30px) * -1), 105vh) rotate(360deg) scale(0.8); opacity: 0; }
+        }
+
+        /* ===== 音乐按钮 ===== */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 14px 16px;
+            display: flex; justify-content: flex-end;
+            z-index: 20;
+        }
+        .music-toggle {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(30,16,10,0.65);
+            border: 1px solid rgba(201,169,110,0.5);
+            color: #C9A96E;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; padding: 0;
+        }
+        .music-toggle:active { transform: scale(0.92); }
+        .music-toggle.playing {
+            background: rgba(201,169,110,0.3);
+            box-shadow: 0 0 14px rgba(201,169,110,0.6);
+            animation: musicPulse 2s ease-in-out infinite;
+        }
+        @keyframes musicPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(201,169,110,0.6); }
+            50% { box-shadow: 0 0 22px rgba(201,169,110,0.95); }
+        }
+
+        /* ===== 顶部标题 ===== */
+        .header {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 50px 20px 0;
+            text-align: center;
+            z-index: 15;
+            pointer-events: none;
+        }
+        h1 {
+            color: #F0D99C;
+            font-size: 30px;
+            letter-spacing: 10px;
+            text-shadow:
+                0 0 24px rgba(201,169,110,0.85),
+                0 0 48px rgba(201,169,110,0.5),
+                0 2px 6px rgba(0,0,0,0.95);
+            animation: titleGlow 4s ease-in-out infinite;
+            padding-left: 10px;
+        }
+        @keyframes titleGlow {
+            0%, 100% {
+                text-shadow:
+                    0 0 24px rgba(201,169,110,0.85),
+                    0 0 48px rgba(201,169,110,0.5),
+                    0 2px 6px rgba(0,0,0,0.95);
+            }
+            50% {
+                text-shadow:
+                    0 0 32px rgba(255,220,160,1),
+                    0 0 64px rgba(201,169,110,0.7),
+                    0 2px 6px rgba(0,0,0,0.95);
+            }
+        }
+        .title-underline {
+            width: 180px; height: 14px;
+            margin: 6px auto 0;
+            display: block;
+        }
+        .subtitle {
+            color: #E8DFC8;
+            font-size: 12px;
+            margin-top: 6px;
+            opacity: 0.85;
+            letter-spacing: 3px;
+        }
+
+        /* ===== 3D 场景 ===== */
+        .scene {
+            position: fixed; inset: 0;
+            perspective: 1400px;
+            perspective-origin: 50% 48%;
+            z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            touch-action: none;
+            pointer-events: none;
+        }
+        .ring {
+            position: relative;
+            width: 0; height: 0;
+            transform-style: preserve-3d;
+            will-change: transform;
+            pointer-events: auto;
+        }
+
+        /* ===== 3D 卡片 ===== */
+        .card-3d {
+            position: absolute;
+            width: 130px; height: 175px;
+            left: -65px; top: -87.5px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #F5EEDC;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 16px 10px;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            transition: box-shadow 0.3s, filter 0.3s;
+            cursor: pointer;
+            overflow: hidden;
+            background:
+                linear-gradient(160deg,
+                    rgba(160,70,55,0.95) 0%,
+                    rgba(100,50,35,0.95) 100%);
+            border: 1.5px solid rgba(201,169,110,0.7);
+            box-shadow:
+                0 0 0 3px rgba(30,16,10,0.6),
+                0 0 0 4.5px rgba(201,169,110,0.4),
+                0 10px 30px rgba(0,0,0,0.7),
+                inset 0 0 25px rgba(201,169,110,0.15),
+                inset 0 0 0 4px rgba(30,16,10,0.5);
+        }
+        /* 卡片内层装饰框 */
+        .card-3d::before {
+            content: '';
+            position: absolute;
+            top: 7px; left: 7px; right: 7px; bottom: 7px;
+            border: 1px solid rgba(201,169,110,0.35);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        /* 卡片顶部装饰光带 */
+        .card-3d::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 50%;
+            background: linear-gradient(180deg,
+                rgba(255,220,160,0.15) 0%,
+                transparent 100%);
+            pointer-events: none;
+            border-radius: 14px 14px 0 0;
+        }
+        .card-3d.completed {
+            border-color: #F0D99C;
+            box-shadow:
+                0 0 0 3px rgba(30,16,10,0.6),
+                0 0 0 4.5px rgba(240,217,156,0.8),
+                0 0 30px rgba(255,220,160,0.6),
+                0 10px 30px rgba(0,0,0,0.7),
+                inset 0 0 25px rgba(201,169,110,0.25),
+                inset 0 0 0 4px rgba(30,16,10,0.5);
+        }
+        .card-3d.ar-card-3d {
+            background:
+                linear-gradient(160deg,
+                    rgba(80,120,100,0.95) 0%,
+                    rgba(50,80,65,0.95) 100%);
+            border-color: rgba(201,169,110,0.8);
+        }
+        .card-3d .card-icon {
+            font-size: 44px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+            position: relative; z-index: 1;
+        }
+        .card-3d .card-name {
+            font-size: 16px;
+            letter-spacing: 3px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            position: relative; z-index: 1;
+        }
+        .card-3d .card-medal {
+            position: absolute;
+            top: 10px; right: 10px;
+            font-size: 16px;
+            opacity: 0.2;
+            filter: grayscale(1);
+            transition: 0.3s;
+            z-index: 2;
+        }
+        .card-3d.completed .card-medal {
+            opacity: 1;
+            filter: none;
+            animation: medalPop 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes medalPop {
+            0% { transform: scale(0.3) rotate(-25deg); }
+            60% { transform: scale(1.4) rotate(10deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        /* ===== 底部勋章进度 ===== */
+        .bottom-panel {
+            position: fixed;
+            bottom: 30px; left: 0; right: 0;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 14px;
+            z-index: 15;
+            padding: 0 20px;
+        }
+        .medal-progress {
+            color: #F0D99C;
+            font-size: 13px;
+            padding: 9px 22px;
+            background: rgba(30,16,10,0.75);
+            border: 1.5px solid rgba(201,169,110,0.55);
+            box-shadow:
+                0 0 24px rgba(201,169,110,0.3),
+                inset 0 0 14px rgba(201,169,110,0.12);
+            letter-spacing: 2px;
+            clip-path: polygon(
+                8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px),
+                calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px
+            );
+            transition: 0.3s;
+        }
+        .medal-progress.complete {
+            background: rgba(201,169,110,0.3);
+            box-shadow:
+                0 0 36px rgba(255,220,160,0.75),
+                inset 0 0 22px rgba(255,220,160,0.3);
+            animation: progressPulse 2s ease-in-out infinite;
+        }
+        @keyframes progressPulse {
+            0%, 100% { box-shadow: 0 0 36px rgba(255,220,160,0.75), inset 0 0 22px rgba(255,220,160,0.3); }
+            50% { box-shadow: 0 0 50px rgba(255,220,160,1), inset 0 0 30px rgba(255,220,160,0.45); }
+        }
+
+        .bottom-actions {
+            display: flex; gap: 10px;
+            width: 100%; max-width: 360px;
+        }
+        .action-btn-sm {
+            flex: 1;
+            text-align: center;
+            background: linear-gradient(135deg,
+                rgba(46,30,20,0.85) 0%,
+                rgba(30,20,15,0.85) 100%);
+            color: #F5EEDC;
+            padding: 11px 12px;
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 2px;
+            border: 1px solid rgba(201,169,110,0.5);
+            transition: all 0.3s ease;
+            clip-path: polygon(
+                8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px),
+                calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px
+            );
+        }
+        .action-btn-sm:hover {
+            background: linear-gradient(135deg,
+                rgba(201,169,110,0.9) 0%,
+                rgba(180,140,90,0.9) 100%);
+            color: #2E1E1A;
+        }
+        .action-btn-sm.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* ===== 拖拽提示 ===== */
+        .drag-hint {
+            position: fixed;
+            bottom: 130px; left: 50%;
+            transform: translateX(-50%);
+            color: rgba(245,238,220,0.7);
+            font-size: 12px;
+            letter-spacing: 2px;
+            padding: 6px 16px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 16px;
+            border: 1px solid rgba(201,169,110,0.25);
+            z-index: 15;
+            animation: hintFade 3s ease-in-out infinite;
+            transition: opacity 0.4s;
+            white-space: nowrap;
+        }
+        @keyframes hintFade {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== 跳跃徽章动画 ===== */
+        .celebration {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            text-align: center;
+        }
+        .celebration.show {
+            animation: celebrateJump 3.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes celebrateJump {
+            0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            8%   { transform: translate(-50%, -52%) scale(1.4); opacity: 1; }
+            16%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            24%  { transform: translate(-50%, -68%) scale(1.08); opacity: 1; }
+            32%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            40%  { transform: translate(-50%, -65%) scale(1.06); opacity: 1; }
+            48%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            56%  { transform: translate(-50%, -62%) scale(1.04); opacity: 1; }
+            64%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        }
+        .celebration-icon {
+            font-size: 110px;
+            line-height: 1;
+            filter: drop-shadow(0 0 30px rgba(255,220,160,0.95))
+                    drop-shadow(0 0 60px rgba(201,169,110,0.75));
+        }
+        .celebration-text {
+            margin-top: 18px;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 6px;
+            color: #F0D99C;
+            text-shadow:
+                0 0 20px rgba(255,220,160,0.9),
+                0 0 40px rgba(201,169,110,0.6),
+                0 2px 8px rgba(0,0,0,0.8);
+        }
+        .celebration-sub {
+            margin-top: 6px;
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: rgba(245,238,220,0.85);
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 24px; letter-spacing: 7px; }
+            .card-3d { width: 118px; height: 160px; left: -59px; top: -80px; }
+            .card-3d .card-icon { font-size: 38px; }
+            .card-3d .card-name { font-size: 14px; letter-spacing: 2px; }
+            .celebration-icon { font-size: 85px; }
+            .celebration-text { font-size: 19px; }
+            .header { padding-top: 45px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-canvas"></div>
+    <div class="halo-rays"></div>
+    <div class="halo-glow"></div>
+    <div class="halo-ring ring-1"></div>
+    <div class="halo-ring ring-2"></div>
+    <div class="halo-ring ring-3"></div>
+
+    <div class="sparkles" id="sparkles"></div>
+    <div class="petals-layer" id="petalsLayer"></div>
+
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="audio/bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="top-bar">
+        <button class="music-toggle" id="musicToggle" title="背景音乐">🔇</button>
+    </div>
+
+    <div class="header">
+        <h1>敦煌·灵境</h1>
+        <svg class="title-underline" viewBox="0 0 180 14">
+            <line x1="0" y1="7" x2="55" y2="7" stroke="#C9A96E" stroke-width="1" opacity="0.7"/>
+            <line x1="125" y1="7" x2="180" y2="7" stroke="#C9A96E" stroke-width="1" opacity="0.7"/>
+            <ellipse cx="90" cy="7" rx="7" ry="3.5" fill="none" stroke="#C9A96E" stroke-width="1" opacity="0.9"/>
+            <ellipse cx="90" cy="7" rx="3.5" ry="5.5" fill="none" stroke="#C9A96E" stroke-width="1" opacity="0.9"/>
+            <circle cx="90" cy="7" r="1.5" fill="#F0D99C"/>
+        </svg>
+        <p class="subtitle">触碰千年 · 旋转灵境 · 集齐五枚勋章</p>
+    </div>
+
+    <!-- 3D 旋转卡片环 -->
+    <div class="scene" id="scene">
+        <div class="ring" id="ring"></div>
+    </div>
+
+    <!-- 拖拽提示 -->
+    <div class="drag-hint" id="dragHint">← 左右拖动旋转 · 点击卡片进入 →</div>
+
+    <!-- 底部面板 -->
+    <div class="bottom-panel">
+        <div class="medal-progress" id="medalProgress">🏅 0 / 5 枚勋章</div>
+        <div class="bottom-actions">
+            <a href="index.html" class="action-btn-sm">🏛️ 云游敦煌</a>
+            <a href="postcard.html" class="action-btn-sm disabled" id="postcardBtn">📮 互动留念</a>
+        </div>
+    </div>
+
+    <!-- 跳跃徽章动画 -->
+    <div class="celebration" id="celebration">
+        <div class="celebration-icon">🏅</div>
+        <div class="celebration-text">集齐五枚勋章！</div>
+        <div class="celebration-sub">灵境之门已开启</div>
+    </div>
+
+    <script>
+        /* ===== 生成光点 ===== */
+        (function createSparkles() {
+            const layer = document.getElementById('sparkles');
+            for (let i = 0; i < 24; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                const size = 2 + Math.random() * 4;
+                s.style.width = size + 'px';
+                s.style.height = size + 'px';
+                s.style.left = (5 + Math.random() * 90) + '%';
+                s.style.top = (10 + Math.random() * 80) + '%';
+                s.style.animationDuration = (2.5 + Math.random() * 3.5) + 's';
+                s.style.animationDelay = (-Math.random() * 6) + 's';
+                layer.appendChild(s);
+            }
+        })();
+
+        /* ===== 生成花瓣 ===== */
+        (function createPetals() {
+            const layer = document.getElementById('petalsLayer');
+            const colors = [
+                'radial-gradient(circle at 30% 30%, #F0D99C, #C9A96E)',
+                'radial-gradient(circle at 30% 30%, #F5C8B8, #C87870)',
+                'radial-gradient(circle at 30% 30%, #D4E8DD, #A0C8B4)',
+                'radial-gradient(circle at 30% 30%, #E8C8A0, #B8885A)'
+            ];
+            for (let i = 0; i < 24; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                const size = 8 + Math.random() * 10;
+                petal.style.width = size + 'px';
+                petal.style.height = size + 'px';
+                petal.style.left = Math.random() * 100 + '%';
+                petal.style.background = colors[Math.floor(Math.random() * colors.length)];
+                petal.style.animationDuration = (8 + Math.random() * 8) + 's';
+                petal.style.animationDelay = (-Math.random() * 16) + 's';
+                petal.style.setProperty('--sway', (20 + Math.random() * 50) + 'px');
+                petal.style.borderRadius = Math.random() > 0.5 ? '50% 0 50% 0' : '0 50% 0 50%';
+                layer.appendChild(petal);
+            }
+        })();
+
+        /* ===== 状态管理 ===== */
+        function getCardId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('card') || 'default';
+        }
+        function getMedals() {
+            const key = 'dunhuang_medals_' + getCardId();
+            try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+        }
+        function recordMedal(id) {
+            const key = 'dunhuang_medals_' + getCardId();
+            const medals = getMedals();
+            medals[id] = { obtained: true, time: new Date().toISOString() };
+            localStorage.setItem(key, JSON.stringify(medals));
+        }
+
+        /* ===== 3D 卡片环数据 ===== */
+        const CARD_DATA = [
+            { id: 'feitian1', name: '散花飞天', icon: '🌸', href: 'feitian1.html' },
+            { id: 'feitian2', name: '伎乐飞天', icon: '🎵', href: 'feitian2.html' },
+            { id: 'feitian3', name: '九色鹿',   icon: '🦌', href: 'feitian3.html' },
+            { id: 'feitian4', name: '供养人',   icon: '🙏', href: 'feitian4.html' },
+            { id: 'ar',       name: 'AR 体验',  icon: '✨', href: 'ar.html', isAR: true }
+        ];
+
+        const ring = document.getElementById('ring');
+        const scene = document.getElementById('scene');
+        const N = CARD_DATA.length;
+        const angleStep = 360 / N;
+        let radius = 260;
+
+        function calcRadius() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            // 半径随屏幕宽度和高度共同决定，保证卡片环不超出屏幕
+            radius = Math.min(Math.max(w * 0.38, 200), 300);
+            // 竖屏高度不足时，缩小半径
+            if (h < 700) radius = Math.min(radius, 230);
+        }
+        calcRadius();
+
+        /* ===== 构建卡片 ===== */
+        function buildCards() {
+            ring.innerHTML = '';
+            const medals = getMedals();
+            CARD_DATA.forEach((data, i) => {
+                const card = document.createElement('a');
+                card.className = 'card-3d' + (data.isAR ? ' ar-card-3d' : '');
+                card.href = data.href;
+                card.dataset.id = data.id;
+                card.dataset.name = data.name;
+                if (medals[data.id] && medals[data.id].obtained) {
+                    card.classList.add('completed');
+                }
+                card.innerHTML = `
+                    <span class="card-medal">🏅</span>
+                    <span class="card-icon">${data.icon}</span>
+                    <span class="card-name">${data.name}</span>
+                `;
+                card.style.transform = `rotateY(${i * angleStep}deg) translateZ(${radius}px)`;
+                ring.appendChild(card);
+
+                card.addEventListener('click', (e) => {
+                    // 记录勋章（AR卡片记录ar，其他记录对应id）
+                    if (!getMedals()[data.id] || !getMedals()[data.id].obtained) {
+                        recordMedal(data.id);
+                        card.classList.add('completed');
+                    }
+                    // 跳转由 <a href> 自动处理
+                });
+            });
+        }
+
+        buildCards();
+
+        /* ===== 自动旋转 + 拖拽 ===== */
+        let currentAngle = 0;
+        let autoRotate = true;
+        let isDragging = false;
+        let startX = 0;
+        let startAngle = 0;
+        let lastTime = performance.now();
+        let hasDragged = false;
+
+        function autoLoop(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+            if (autoRotate && !isDragging) {
+                // 缓慢自动旋转，12秒一圈
+                currentAngle += 30 * dt;
+                ring.style.transform = `rotateY(${currentAngle}deg)`;
+            }
+            requestAnimationFrame(autoLoop);
+        }
+        requestAnimationFrame(autoLoop);
+
+        scene.addEventListener('touchstart', onStart, { passive: true });
+        scene.addEventListener('touchmove', onMove, { passive: false });
+        scene.addEventListener('touchend', onEnd);
+        scene.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        function onStart(e) {
+            isDragging = true;
+            startX = e.touches ? e.touches[0].clientX : e.clientX;
+            startAngle = currentAngle;
+            autoRotate = false;
+            hasDragged = false;
+            // 隐藏提示
+            const hint = document.getElementById('dragHint');
+            if (hint) hint.style.opacity = '0';
+        }
+        function onMove(e) {
+            if (!isDragging) return;
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const dx = x - startX;
+            if (Math.abs(dx) > 5) hasDragged = true;
+            currentAngle = startAngle + dx * 0.4;
+            ring.style.transform = `rotateY(${currentAngle}deg)`;
+            if (e.touches) e.preventDefault();
+        }
+        function onEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            // 3秒后自动恢复旋转
+            setTimeout(() => {
+                if (!isDragging) {
+                    autoRotate = true;
+                    lastTime = performance.now();
+                }
+            }, 3000);
+        }
+
+        /* ===== 背景音乐 ===== */
+        const bgMusic = document.getElementById('bgMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let musicStarted = false;
+        let musicUserPaused = false;
+        bgMusic.volume = 0.32;
+
+        function updateMusicIcon() {
+            if (bgMusic.paused) {
+                musicToggle.textContent = '🔇';
+                musicToggle.classList.remove('playing');
+            } else {
+                musicToggle.textContent = '🎵';
+                musicToggle.classList.add('playing');
+            }
+        }
+        function tryPlayMusic() {
+            if (!musicStarted || musicUserPaused) return;
+            const p = bgMusic.play();
+            if (p && p.catch) p.catch(() => {});
+            updateMusicIcon();
+        }
+        function startMusicOnFirstInteraction() {
+            if (musicStarted) return;
+            musicStarted = true;
+            bgMusic.play().then(() => updateMusicIcon()).catch(() => updateMusicIcon());
+        }
+        document.addEventListener('touchstart', startMusicOnFirstInteraction, { once: true, passive: true });
+        document.addEventListener('click', startMusicOnFirstInteraction, { once: true });
+        musicToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bgMusic.paused) {
+                musicUserPaused = false;
+                musicStarted = true;
+                bgMusic.play().then(() => updateMusicIcon()).catch(() => {});
+            } else {
+                bgMusic.pause();
+                musicUserPaused = true;
+                updateMusicIcon();
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) bgMusic.pause();
+            else if (musicStarted && !musicUserPaused) tryPlayMusic();
+        });
+        updateMusicIcon();
+
+        /* ===== 更新勋章进度 ===== */
+        const ALL_MEDALS = ['feitian1', 'feitian2', 'feitian3', 'feitian4', 'ar'];
+
+        function updateUI() {
+            const medals = getMedals();
+            let count = 0;
+            ALL_MEDALS.forEach(id => {
+                if (medals[id] && medals[id].obtained) count++;
+            });
+
+            const progress = document.getElementById('medalProgress');
+            progress.textContent = '🏅 ' + count + ' / 5 枚勋章';
+
+            const postcardBtn = document.getElementById('postcardBtn');
+            if (count >= 5) {
+                progress.classList.add('complete');
+                postcardBtn.classList.remove('disabled');
+                postcardBtn.textContent = '📮 互动留念（已解锁）';
+
+                const shownKey = 'celebration_shown_' + getCardId();
+                if (!localStorage.getItem(shownKey)) {
+                    setTimeout(() => {
+                        const cel = document.getElementById('celebration');
+                        cel.classList.add('show');
+                        localStorage.setItem(shownKey, '1');
+                        setTimeout(() => cel.classList.remove('show'), 4000);
+                    }, 800);
+                }
+            } else {
+                progress.classList.remove('complete');
+            }
+        }
+        updateUI();
+
+        /* ===== 窗口变化时重算半径 ===== */
+        window.addEventListener('resize', () => {
+            calcRadius();
+            const medals = getMedals();
+            CARD_DATA.forEach((data, i) => {
+                const card = document.querySelector(`.card-3d[data-id="${data.id}"]`);
+                if (card) {
+                    card.style.transform = `rotateY(${i * angleStep}deg) translateZ(${radius}px)`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

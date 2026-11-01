@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>互动留念 · 敦煌灵境</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; overflow: hidden;
+            font-family: 'STSong', '宋体', serif;
+            color: #F5EEDC;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background: #120a06;
+        }
+
+        /* ===== 背景层 ===== */
+        .bg-layer {
+            position: fixed; inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse 70% 55% at 50% 42%,
+                    rgba(201,169,110,0.38) 0%,
+                    rgba(160,110,70,0.22) 30%,
+                    rgba(80,45,30,0.12) 55%,
+                    rgba(20,10,6,0) 75%),
+                radial-gradient(ellipse 120% 90% at 50% 110%,
+                    rgba(139,58,58,0.35) 0%,
+                    rgba(60,30,20,0.1) 50%,
+                    transparent 75%),
+                radial-gradient(ellipse 90% 70% at 15% 15%,
+                    rgba(201,169,110,0.10) 0%,
+                    transparent 60%),
+                radial-gradient(ellipse 90% 70% at 85% 85%,
+                    rgba(180,120,80,0.10) 0%,
+                    transparent 60%),
+                linear-gradient(180deg, #1e120c 0%, #120a06 55%, #0a0503 100%);
+        }
+        .bg-glow {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 180vmax; height: 180vmax;
+            margin: -90vmax 0 0 -90vmax;
+            z-index: 1;
+            pointer-events: none;
+            background: conic-gradient(
+                from 0deg,
+                rgba(201,169,110,0.00) 0deg,
+                rgba(201,169,110,0.10) 60deg,
+                rgba(201,169,110,0.00) 120deg,
+                rgba(220,160,110,0.08) 200deg,
+                rgba(201,169,110,0.00) 280deg,
+                rgba(201,169,110,0.10) 360deg
+            );
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.55;
+            animation: slowSpin 90s linear infinite;
+        }
+        @keyframes slowSpin { to { transform: rotate(360deg); } }
+
+        /* ===== 粒子 ===== */
+        .particles, .bokeh {
+            position: fixed; inset: 0;
+            pointer-events: none; overflow: hidden; z-index: 2;
+        }
+        .particle {
+            position: absolute; border-radius: 50%;
+            background: #FFE9C4;
+            box-shadow: 0 0 4px rgba(255,225,170,0.9), 0 0 10px rgba(201,169,110,0.6);
+            animation: starFloat linear infinite; opacity: 0;
+        }
+        @keyframes starFloat {
+            0%   { transform: translateY(105vh) translateX(0) scale(0.4); opacity: 0; }
+            15%  { opacity: 1; }
+            85%  { opacity: 0.9; }
+            100% { transform: translateY(-10vh) translateX(30px) scale(1); opacity: 0; }
+        }
+        .bokeh-dot {
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle,
+                rgba(255,220,160,0.55) 0%,
+                rgba(201,169,110,0.25) 40%,
+                rgba(201,169,110,0) 70%);
+            filter: blur(6px);
+            animation: bokehFloat linear infinite; opacity: 0;
+        }
+        @keyframes bokehFloat {
+            0%   { transform: translateY(110vh) scale(0.6); opacity: 0; }
+            20%  { opacity: 0.85; }
+            80%  { opacity: 0.7; }
+            100% { transform: translateY(-15vh) scale(1.1); opacity: 0; }
+        }
+
+        /* ===== 顶部栏 ===== */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 14px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            z-index: 20;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent);
+        }
+        .back {
+            color: #C9A96E; text-decoration: none; font-size: 15px;
+            padding: 6px 12px; background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 1px solid rgba(201,169,110,0.25);
+        }
+        .top-bar h2 {
+            color: #F0D99C; font-size: 18px; letter-spacing: 3px;
+            text-shadow: 0 0 12px rgba(201,169,110,0.7), 0 0 24px rgba(201,169,110,0.35);
+        }
+
+        /* ===== 音乐开关按钮 ===== */
+        .music-toggle {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(201,169,110,0.4);
+            color: #C9A96E;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+            padding: 0;
+        }
+        .music-toggle:active { transform: scale(0.92); }
+        .music-toggle.playing {
+            background: rgba(201,169,110,0.25);
+            box-shadow: 0 0 14px rgba(201,169,110,0.5);
+            animation: musicPulse 2s ease-in-out infinite;
+        }
+        @keyframes musicPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(201,169,110,0.5); }
+            50% { box-shadow: 0 0 22px rgba(201,169,110,0.85); }
+        }
+
+        /* ===== 3D 场景 ===== */
+        .scene {
+            position: fixed; inset: 0;
+            perspective: 1200px; perspective-origin: 50% 50%;
+            z-index: 5;
+            display: flex; align-items: center; justify-content: center;
+            touch-action: none;
+        }
+        .ring {
+            position: relative; width: 0; height: 0;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .photo-card {
+            position: absolute;
+            width: 140px; height: 200px;
+            left: -70px; top: -100px;
+            border-radius: 10px; overflow: hidden; cursor: pointer;
+            box-shadow:
+                0 10px 40px rgba(0,0,0,0.7),
+                0 0 0 2px rgba(201,169,110,0.45),
+                0 0 22px rgba(201,169,110,0.35);
+            transition: box-shadow 0.3s, transform 0.3s, filter 0.3s;
+            backface-visibility: hidden; background: #2E1E1A;
+        }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .photo-card .label {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 8px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: #F5EEDC; font-size: 12px;
+            text-align: center; letter-spacing: 1px;
+        }
+        .photo-card.locked {
+            opacity: 0.3; filter: grayscale(0.9);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .photo-card.locked::after {
+            content: '🔒'; position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px; opacity: 0.85;
+        }
+        .photo-card.selected {
+            box-shadow:
+                0 0 40px rgba(255,220,160,0.9),
+                0 0 80px rgba(201,169,110,0.6),
+                0 0 0 3px #F0D99C;
+            transform: scale(1.06) !important;
+        }
+
+        /* ===== 中央神女 ===== */
+        .goddess {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 240px; height: 240px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%; overflow: hidden;
+            z-index: 3; pointer-events: none;
+            border: 2px solid rgba(255,220,160,0.65);
+            animation: goddessGlow 3.5s ease-in-out infinite;
+        }
+        .goddess video, .goddess img { width: 100%; height: 100%; object-fit: cover; }
+        @keyframes goddessGlow {
+            0%, 100% {
+                box-shadow:
+                    0 0 50px rgba(201,169,110,0.7),
+                    0 0 110px rgba(201,169,110,0.4),
+                    0 0 200px rgba(201,169,110,0.18),
+                    inset 0 0 30px rgba(255,220,160,0.35);
+            }
+            50% {
+                box-shadow:
+                    0 0 80px rgba(255,220,160,0.95),
+                    0 0 160px rgba(201,169,110,0.6),
+                    0 0 260px rgba(201,169,110,0.3),
+                    inset 0 0 40px rgba(255,220,160,0.55);
+            }
+        }
+
+        /* ===== 底部提示 ===== */
+        .hint {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            color: #F5EEDC; font-size: 13px;
+            letter-spacing: 2px; z-index: 15;
+            text-align: center; padding: 8px 20px;
+            background: rgba(0,0,0,0.5); border-radius: 20px;
+            border: 1px solid rgba(201,169,110,0.35);
+            box-shadow: 0 0 18px rgba(201,169,110,0.25);
+            animation: hintFade 2.4s ease-in-out infinite;
+            transition: opacity 0.3s;
+        }
+        @keyframes hintFade {
+            0%, 100% { opacity: 0.65; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== 编辑面板 ===== */
+        .editor {
+            position: fixed;
+            bottom: -100%; left: 0; right: 0;
+            max-height: 85vh;
+            background: linear-gradient(180deg, rgba(46,30,26,0.98), rgba(30,20,15,0.98));
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            border-top: 1px solid rgba(201,169,110,0.4);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.7);
+            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 30; overflow-y: auto;
+            padding: 20px 20px 30px;
+        }
+        .editor.show { bottom: 0; }
+        .editor-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .editor-header h3 { color: #C9A96E; font-size: 17px; letter-spacing: 2px; }
+        .close-btn {
+            background: none; border: none;
+            color: #C9A96E; font-size: 24px;
+            cursor: pointer; padding: 4px 8px;
+        }
+        .canvas-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+        .postcard-canvas {
+            width: 200px; height: 275px; border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+        .row-label {
+            color: #C9A96E; font-size: 13px;
+            letter-spacing: 1px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .row-label .count {
+            color: rgba(245,238,220,0.5); font-size: 11px;
+        }
+        .template-row { display: flex; gap: 10px; margin-bottom: 16px; }
+        .template-btn {
+            flex: 1; padding: 10px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(201,169,110,0.3);
+            background: rgba(255,255,255,0.05);
+            color: #F5EEDC; font-size: 13px;
+            cursor: pointer; transition: 0.2s;
+            font-family: inherit; letter-spacing: 1px;
+        }
+        .template-btn.active {
+            border-color: #C9A96E;
+            background: rgba(201,169,110,0.2);
+            box-shadow: 0 0 12px rgba(201,169,110,0.3);
+        }
+
+        /* ===== 留言方式 Tab ===== */
+        .msg-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+        .msg-tab {
+            flex: 1; padding: 10px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(201,169,110,0.3);
+            background: rgba(255,255,255,0.05);
+            color: #F5EEDC; font-size: 13px;
+            cursor: pointer; transition: 0.2s;
+            font-family: inherit; letter-spacing: 1px;
+        }
+        .msg-tab.active {
+            border-color: #C9A96E;
+            background: rgba(201,169,110,0.2);
+            box-shadow: 0 0 12px rgba(201,169,110,0.3);
+        }
+        .msg-content { margin-bottom: 16px; }
+        .msg-content.hidden { display: none; }
+
+        .message-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(201,169,110,0.3);
+            background: rgba(0,0,0,0.35);
+            color: #F5EEDC;
+            font-size: 14px;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .message-input:focus {
+            border-color: #C9A96E;
+            box-shadow: 0 0 12px rgba(201,169,110,0.25);
+        }
+        .message-input::placeholder { color: rgba(245,238,220,0.35); }
+
+        .audio-controls {
+            display: flex; align-items: center; gap: 12px;
+            flex-wrap: wrap;
+        }
+        .rec-btn {
+            background: #8B3A3A; color: #F5EEDC;
+            border: none; border-radius: 50px;
+            padding: 10px 20px; font-size: 14px;
+            cursor: pointer; font-family: inherit;
+            letter-spacing: 1px; transition: 0.2s;
+        }
+        .rec-btn.recording {
+            background: #C9A96E; color: #2E1E1A;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .audio-status {
+            font-size: 12px; color: rgba(245,238,220,0.7);
+        }
+        .audio-preview {
+            width: 100%; margin-top: 10px; display: none;
+        }
+        .audio-preview.show { display: block; }
+
+        .btn-row { display: flex; gap: 12px; }
+        .action-btn {
+            flex: 1; padding: 13px;
+            border-radius: 12px; border: none;
+            font-size: 15px; cursor: pointer;
+            font-family: inherit; letter-spacing: 2px;
+            font-weight: bold;
+        }
+        .action-btn.primary {
+            background: linear-gradient(135deg, #C9A96E, #a88447);
+            color: #2E1E1A;
+        }
+        .action-btn.secondary {
+            background: rgba(255,255,255,0.08);
+            color: #F5EEDC;
+            border: 1px solid rgba(201,169,110,0.3);
+        }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(30, 20, 15, 0.95);
+            color: #F0D99C;
+            padding: 16px 28px;
+            border-radius: 14px;
+            border: 1px solid rgba(201,169,110,0.6);
+            font-size: 15px; z-index: 100;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s ease;
+            text-align: center;
+            box-shadow: 0 8px 40px rgba(201,169,110,0.3);
+            letter-spacing: 1px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="bg-glow"></div>
+
+    <div class="particles" id="particles"></div>
+    <div class="bokeh" id="bokeh"></div>
+
+    <!-- 背景音乐 -->
+    <!-- 【音乐占位】把背景音乐文件放到 audio/bgm.mp3，没有的话这个 audio 会静默失败，不影响其他功能 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="audio/bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="top-bar">
+        <a href="index.html?view=explore" class="back">← 返回</a>
+        <h2>📮 互动留念</h2>
+        <button class="music-toggle" id="musicToggle" title="背景音乐">🔇</button>
+    </div>
+
+    <!-- 中央神女 -->
+    <!-- 【图片占位】有透明背景神女视频则替换 images/goddess.mp4；没有则换 <img> -->
+    <div class="goddess">
+        <video autoplay muted loop playsinline>
+            <source src="images/goddess.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="scene" id="scene">
+        <div class="ring" id="ring"></div>
+    </div>
+
+    <div class="hint" id="hint">左右拖动旋转 · 点击照片选择</div>
+
+    <div class="editor" id="editor">
+        <div class="editor-header">
+            <h3>📮 制作你的敦煌明信片</h3>
+            <button class="close-btn" id="closeEditor">✕</button>
+        </div>
+        <div class="canvas-wrap">
+            <canvas class="postcard-canvas" id="postcardCanvas" width="600" height="825"></canvas>
+        </div>
+        <div class="row-label">选择模板</div>
+        <div class="template-row">
+            <button class="template-btn active" data-template="gold">金色祥云</button>
+            <button class="template-btn" data-template="red">土红壁画</button>
+        </div>
+
+        <div class="row-label">留言方式</div>
+        <div class="msg-tabs">
+            <button class="msg-tab active" data-tab="text">✍️ 文字留言</button>
+            <button class="msg-tab" data-tab="audio">🎙️ 语音留言</button>
+        </div>
+
+        <div class="msg-content" id="textContent">
+            <div class="row-label" style="margin-top:-4px">
+                <span>写下你的留言（可选）</span>
+                <span class="count" id="charCount">0 / 60</span>
+            </div>
+            <textarea class="message-input" id="messageInput"
+                      maxlength="60"
+                      placeholder="写下此刻的感受，或对敦煌的一句话……"></textarea>
+        </div>
+
+        <div class="msg-content hidden" id="audioContent">
+            <div class="audio-controls">
+                <button class="rec-btn" id="recBtn">🎙️ 开始录音</button>
+                <span class="audio-status" id="audioStatus">点击开始录制</span>
+            </div>
+            <audio class="audio-preview" id="audioPreview" controls></audio>
+        </div>
+
+        <div class="btn-row">
+            <button class="action-btn secondary" id="resetBtn">🔄 重选</button>
+            <button class="action-btn primary" id="saveBtn">💾 保存明信片</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function getCardId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('card') || 'default';
+        }
+        function getMedals() {
+            const key = 'dunhuang_medals_' + getCardId();
+            try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+        }
+
+        const MEDAL_LIST = [
+            { id: 'feitian1', name: '散花飞天', img: 'images/postcard_feitian1.jpg' },
+            { id: 'feitian2', name: '伎乐飞天', img: 'images/postcard_feitian2.jpg' },
+            { id: 'feitian3', name: '九色鹿',   img: 'images/postcard_feitian3.jpg' },
+            { id: 'feitian4', name: '供养人',   img: 'images/postcard_feitian4.jpg' }
+        ];
+
+        const medals = getMedals();
+
+        /* ===== 背景音乐控制 ===== */
+        const bgMusic = document.getElementById('bgMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let musicStarted = false;
+        let musicUserPaused = false; // 用户手动暂停后，不再自动恢复
+
+        bgMusic.volume = 0.3; // 音量压低，不抢戏
+
+        function updateMusicIcon() {
+            if (bgMusic.paused) {
+                musicToggle.textContent = '🔇';
+                musicToggle.classList.remove('playing');
+            } else {
+                musicToggle.textContent = '🎵';
+                musicToggle.classList.add('playing');
+            }
+        }
+
+        function tryPlayMusic() {
+            if (!musicStarted || musicUserPaused) return;
+            const p = bgMusic.play();
+            if (p && p.catch) p.catch(() => {});
+            updateMusicIcon();
+        }
+
+        // 用户第一次触摸/点击页面任意位置时启动音乐（符合浏览器策略）
+        function startMusicOnFirstInteraction() {
+            if (musicStarted) return;
+            musicStarted = true;
+            bgMusic.play().then(() => {
+                updateMusicIcon();
+            }).catch(() => {
+                // 播放失败（例如文件不存在），静默处理，不影响其他功能
+                updateMusicIcon();
+            });
+        }
+
+        document.addEventListener('touchstart', startMusicOnFirstInteraction, { once: true, passive: true });
+        document.addEventListener('click', startMusicOnFirstInteraction, { once: true });
+
+        // 手动开关
+        musicToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bgMusic.paused) {
+                musicUserPaused = false;
+                musicStarted = true;
+                bgMusic.play().then(() => updateMusicIcon()).catch(() => {});
+            } else {
+                bgMusic.pause();
+                musicUserPaused = true;
+                updateMusicIcon();
+            }
+        });
+
+        // 页面切到后台时暂停，回来时若用户没手动关再恢复
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                bgMusic.pause();
+            } else {
+                if (musicStarted && !musicUserPaused) tryPlayMusic();
+            }
+        });
+
+        updateMusicIcon();
+
+        /* ===== 粒子 ===== */
+        (function createParticles() {
+            const starBox = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = 1.5 + Math.random() * 2.5;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (10 + Math.random() * 12) + 's';
+                p.style.animationDelay = (-Math.random() * 20) + 's';
+                starBox.appendChild(p);
+            }
+            const bokehBox = document.getElementById('bokeh');
+            for (let i = 0; i < 10; i++) {
+                const b = document.createElement('div');
+                b.className = 'bokeh-dot';
+                const size = 50 + Math.random() * 90;
+                b.style.width = size + 'px';
+                b.style.height = size + 'px';
+                b.style.left = Math.random() * 100 + '%';
+                b.style.animationDuration = (16 + Math.random() * 14) + 's';
+                b.style.animationDelay = (-Math.random() * 25) + 's';
+                b.style.filter = `blur(${4 + Math.random() * 6}px)`;
+                bokehBox.appendChild(b);
+            }
+        })();
+
+        /* ===== 3D 照片墙 ===== */
+        const ring = document.getElementById('ring');
+        const scene = document.getElementById('scene');
+        const N = MEDAL_LIST.length;
+        const angleStep = 360 / N;
+        let radius = 300;
+
+        function calcRadius() {
+            const w = window.innerWidth;
+            radius = Math.min(Math.max(w * 0.40, 220), 350);
+        }
+        calcRadius();
+
+        MEDAL_LIST.forEach((m, i) => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.dataset.id = m.id;
+            card.dataset.name = m.name;
+            card.dataset.img = m.img;
+            const isUnlocked = medals[m.id] && medals[m.id].obtained;
+            if (!isUnlocked) card.classList.add('locked');
+            card.innerHTML = `
+                <img src="${m.img}" alt="${m.name}" onerror="this.style.background='#2E1E1A'">
+                <div class="label">${m.name}</div>
+            `;
+            card.style.transform = `rotateY(${i * angleStep}deg) translateZ(${radius}px)`;
+            ring.appendChild(card);
+
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (card.classList.contains('locked')) {
+                    showToast('该板块尚未解锁，先去体验吧');
+                    return;
+                }
+                selectPhoto(card);
+            });
+        });
+
+        /* ===== 自动旋转 + 拖拽 ===== */
+        let currentAngle = 0;
+        let autoRotate = true;
+        let isDragging = false;
+        let startX = 0;
+        let startAngle = 0;
+        let lastTime = performance.now();
+
+        function autoLoop(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+            if (autoRotate && !isDragging) {
+                currentAngle += 15 * dt;
+                ring.style.transform = `rotateY(${currentAngle}deg)`;
+            }
+            requestAnimationFrame(autoLoop);
+        }
+        requestAnimationFrame(autoLoop);
+
+        scene.addEventListener('touchstart', onStart, { passive: true });
+        scene.addEventListener('touchmove', onMove, { passive: false });
+        scene.addEventListener('touchend', onEnd);
+        scene.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        function onStart(e) {
+            isDragging = true;
+            startX = e.touches ? e.touches[0].clientX : e.clientX;
+            startAngle = currentAngle;
+        }
+        function onMove(e) {
+            if (!isDragging) return;
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            currentAngle = startAngle + (x - startX) * 0.4;
+            ring.style.transform = `rotateY(${currentAngle}deg)`;
+            if (e.touches) e.preventDefault();
+        }
+        function onEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            setTimeout(() => {
+                if (!isDragging) {
+                    autoRotate = true;
+                    lastTime = performance.now();
+                }
+            }, 3000);
+        }
+
+        /* ===== 状态变量 ===== */
+        let selectedPhoto = null;
+        const editor = document.getElementById('editor');
+        const canvas = document.getElementById('postcardCanvas');
+        const ctx = canvas.getContext('2d');
+        let selectedTemplate = 'gold';
+        let currentMsgType = 'text';
+        let messageText = '';
+        let recordedAudioBlob = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        const messageInput = document.getElementById('messageInput');
+        const charCount = document.getElementById('charCount');
+        const recBtn = document.getElementById('recBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioPreview = document.getElementById('audioPreview');
+        const textContent = document.getElementById('textContent');
+        const audioContent = document.getElementById('audioContent');
+
+        function selectPhoto(card) {
+            document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedPhoto = { name: card.dataset.name, img: card.dataset.img };
+            autoRotate = false;
+            editor.classList.add('show');
+            document.getElementById('hint').style.opacity = '0';
+            drawPostcard();
+        }
+
+        /* ===== 模板切换 ===== */
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedTemplate = btn.dataset.template;
+                drawPostcard();
+            });
+        });
+
+        /* ===== 留言方式 Tab ===== */
+        document.querySelectorAll('.msg-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const type = tab.dataset.tab;
+                if (type === currentMsgType) return;
+
+                document.querySelectorAll('.msg-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentMsgType = type;
+
+                if (type === 'text') {
+                    stopRecordingIfActive();
+                    recordedAudioBlob = null;
+                    audioPreview.src = '';
+                    audioPreview.classList.remove('show');
+                    audioStatus.textContent = '点击开始录制';
+                    recBtn.textContent = '🎙️ 开始录音';
+                    recBtn.classList.remove('recording');
+
+                    textContent.classList.remove('hidden');
+                    audioContent.classList.add('hidden');
+                } else {
+                    messageText = '';
+                    messageInput.value = '';
+                    charCount.textContent = '0 / 60';
+
+                    textContent.classList.add('hidden');
+                    audioContent.classList.remove('hidden');
+                }
+                drawPostcard();
+            });
+        });
+
+        /* ===== 文字输入 ===== */
+        messageInput.addEventListener('input', () => {
+            messageText = messageInput.value;
+            charCount.textContent = messageText.length + ' / 60';
+            drawPostcard();
+        });
+
+        /* ===== 录音 ===== */
+        function stopRecordingIfActive() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        }
+
+        recBtn.addEventListener('click', async () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                recBtn.textContent = '🎙️ 重新录音';
+                recBtn.classList.remove('recording');
+                audioStatus.textContent = '录音完成';
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+                mediaRecorder.onstop = () => {
+                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioPreview.src = URL.createObjectURL(recordedAudioBlob);
+                    audioPreview.classList.add('show');
+                    stream.getTracks().forEach(t => t.stop());
+                    drawPostcard();
+                };
+                mediaRecorder.start();
+                recBtn.textContent = '⏹️ 停止录音';
+                recBtn.classList.add('recording');
+                audioStatus.textContent = '正在录音...';
+            } catch (err) {
+                showToast('无法访问麦克风，请检查权限');
+            }
+        });
+
+        /* ===== 文字自动换行 ===== */
+        function wrapText(ctx, text, maxWidth, maxLines) {
+            const lines = [];
+            let current = '';
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (ch === '\n') {
+                    lines.push(current);
+                    current = '';
+                    if (lines.length >= maxLines) return lines;
+                    continue;
+                }
+                const test = current + ch;
+                if (ctx.measureText(test).width > maxWidth && current) {
+                    lines.push(current);
+                    current = ch;
+                    if (lines.length >= maxLines) return lines;
+                } else {
+                    current = test;
+                }
+            }
+            if (current && lines.length < maxLines) lines.push(current);
+            return lines;
+        }
+
+        /* ===== 绘制明信片 ===== */
+        function drawPostcard() {
+            if (!selectedPhoto) return;
+            const W = canvas.width;
+            const H = canvas.height;
+
+            if (selectedTemplate === 'gold') {
+                const grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, '#F5EEDC');
+                grad.addColorStop(1, '#E8D5A8');
+                ctx.fillStyle = grad;
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, '#8B3A3A');
+                grad.addColorStop(1, '#5C2520');
+                ctx.fillStyle = grad;
+            }
+            ctx.fillRect(0, 0, W, H);
+
+            const mainColor = selectedTemplate === 'gold' ? '#8B3A3A' : '#C9A96E';
+            ctx.strokeStyle = mainColor;
+            ctx.lineWidth = 5;
+            ctx.strokeRect(22, 22, W - 44, H - 44);
+            ctx.lineWidth = 1;
+            ctx.strokeRect(34, 34, W - 68, H - 68);
+
+            ctx.fillStyle = mainColor;
+            ctx.font = 'bold 32px "STSong", "SimSun", serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('敦煌 · 灵境', W / 2, 95);
+
+            ctx.font = '14px "STSong", "SimSun", serif';
+            ctx.fillText('DUNHUANG · LINGJING', W / 2, 122);
+
+            ctx.beginPath();
+            ctx.moveTo(W / 2 - 100, 140);
+            ctx.lineTo(W / 2 + 100, 140);
+            ctx.strokeStyle = '#C9A96E';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                const imgW = W - 100;
+                const imgH = 380;
+                const imgX = 50;
+                const imgY = 170;
+
+                ctx.fillStyle = selectedTemplate === 'gold' ? '#fff' : '#F5EEDC';
+                ctx.fillRect(imgX - 6, imgY - 6, imgW + 12, imgH + 12);
+                ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+                ctx.fillStyle = mainColor;
+                ctx.font = 'bold 28px "STSong", "SimSun", serif';
+                ctx.fillText(selectedPhoto.name, W / 2, imgY + imgH + 60);
+
+                const d = new Date();
+                const dateStr = d.getFullYear() + '.' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '.' +
+                    String(d.getDate()).padStart(2, '0');
+                ctx.font = '16px "STSong", "SimSun", serif';
+                ctx.fillText(dateStr, W / 2, imgY + imgH + 92);
+
+                if (currentMsgType === 'text' && messageText && messageText.trim()) {
+                    ctx.beginPath();
+                    ctx.moveTo(W / 2 - 60, imgY + imgH + 115);
+                    ctx.lineTo(W / 2 + 60, imgY + imgH + 115);
+                    ctx.strokeStyle = '#C9A96E';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.fillStyle = mainColor;
+                    ctx.font = 'italic 20px "STSong", "SimSun", serif';
+                    const maxW = W - 120;
+                    const lines = wrapText(ctx, messageText.trim(), maxW, 3);
+                    let lineY = imgY + imgH + 150;
+                    lines.forEach(line => {
+                        ctx.fillText(line, W / 2, lineY);
+                        lineY += 28;
+                    });
+                } else if (currentMsgType === 'audio' && recordedAudioBlob) {
+                    ctx.beginPath();
+                    ctx.moveTo(W / 2 - 60, imgY + imgH + 115);
+                    ctx.lineTo(W / 2 + 60, imgY + imgH + 115);
+                    ctx.strokeStyle = '#C9A96E';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.fillStyle = mainColor;
+                    ctx.font = '20px "STSong", "SimSun", serif';
+                    ctx.fillText('🎙️ 附有语音留言', W / 2, imgY + imgH + 155);
+
+                    ctx.font = 'italic 14px "STSong", "SimSun", serif';
+                    ctx.fillText('扫描后方可聆听', W / 2, imgY + imgH + 185);
+                }
+
+                ctx.font = '12px "STSong", "SimSun", serif';
+                ctx.fillStyle = selectedTemplate === 'gold'
+                    ? 'rgba(139,58,58,0.6)'
+                    : 'rgba(201,169,110,0.65)';
+                ctx.fillText('敦煌·灵境  |  智焕文脉', W / 2, H - 45);
+            };
+            img.src = selectedPhoto.img;
+        }
+
+        /* ===== 关闭/重选 ===== */
+        function closeEditor() {
+            editor.classList.remove('show');
+            document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('hint').style.opacity = '';
+            setTimeout(() => { autoRotate = true; lastTime = performance.now(); }, 2000);
+        }
+        document.getElementById('closeEditor').addEventListener('click', closeEditor);
+        document.getElementById('resetBtn').addEventListener('click', closeEditor);
+
+        /* ===== 保存 ===== */
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (!selectedPhoto) { showToast('请先选择一张照片'); return; }
+            drawPostcard();
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.download = '敦煌灵境明信片_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('明信片已保存');
+            }, 300);
+        });
+
+        /* ===== Toast ===== */
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        /* ===== 窗口变化 ===== */
+        window.addEventListener('resize', () => {
+            calcRadius();
+            document.querySelectorAll('.photo-card').forEach((c, i) => {
+                c.style.transform = `rotateY(${i * angleStep}deg) translateZ(${radius}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

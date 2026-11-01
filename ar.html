@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="data:,">
+    <title>AR 体验 · 敦煌灵境</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; min-height: 100vh;
+            font-family: 'STSong', '宋体', serif;
+            color: #F5EEDC;
+            overflow-x: hidden;
+            background: #120a06;
+        }
+        .bg-layer {
+            position: fixed; inset: 0; z-index: 0; overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(15,12,10,0.38), rgba(15,10,8,0.84)),
+                url("images/gen/portal.jpg") center 38% / cover no-repeat,
+                radial-gradient(ellipse 70% 55% at 50% 42%,
+                    rgba(201,169,110,0.38) 0%, rgba(160,110,70,0.22) 30%,
+                    rgba(80,45,30,0.12) 55%, rgba(20,10,6,0) 75%),
+                radial-gradient(ellipse 120% 90% at 50% 110%,
+                    rgba(139,58,58,0.35) 0%, rgba(60,30,20,0.1) 50%, transparent 75%),
+                linear-gradient(180deg, #1e120c 0%, #120a06 55%, #0a0503 100%);
+        }
+        .bg-layer::after {
+            position: absolute; inset: 0; content: "";
+            background: url("images/gen/texture-stone.jpg") center / 420px repeat;
+            mix-blend-mode: soft-light; opacity: 0.12; pointer-events: none;
+        }
+        .bg-glow {
+            position: fixed; top: 50%; left: 50%;
+            width: 180vmax; height: 180vmax;
+            margin: -90vmax 0 0 -90vmax;
+            z-index: 1; pointer-events: none;
+            background: conic-gradient(from 0deg,
+                rgba(201,169,110,0.00) 0deg, rgba(201,169,110,0.10) 60deg,
+                rgba(201,169,110,0.00) 120deg, rgba(220,160,110,0.08) 200deg,
+                rgba(201,169,110,0.00) 280deg, rgba(201,169,110,0.10) 360deg);
+            border-radius: 50%; filter: blur(60px); opacity: 0.55;
+            animation: slowSpin 90s linear infinite;
+        }
+        @keyframes slowSpin { to { transform: rotate(360deg); } }
+        .particles, .bokeh {
+            position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2;
+        }
+        .particle {
+            position: absolute; border-radius: 50%; background: #FFE9C4;
+            box-shadow: 0 0 4px rgba(255,225,170,0.9), 0 0 10px rgba(201,169,110,0.6);
+            animation: starFloat linear infinite; opacity: 0;
+        }
+        @keyframes starFloat {
+            0% { transform: translateY(105vh) translateX(0) scale(0.4); opacity: 0; }
+            15% { opacity: 1; } 85% { opacity: 0.9; }
+            100% { transform: translateY(-10vh) translateX(30px) scale(1); opacity: 0; }
+        }
+        .bokeh-dot {
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle,
+                rgba(255,220,160,0.55) 0%, rgba(201,169,110,0.25) 40%, rgba(201,169,110,0) 70%);
+            filter: blur(6px); animation: bokehFloat linear infinite; opacity: 0;
+        }
+        @keyframes bokehFloat {
+            0% { transform: translateY(110vh) scale(0.6); opacity: 0; }
+            20% { opacity: 0.85; } 80% { opacity: 0.7; }
+            100% { transform: translateY(-15vh) scale(1.1); opacity: 0; }
+        }
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 14px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            z-index: 20;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent);
+        }
+        .back {
+            color: #C9A96E; text-decoration: none; font-size: 15px;
+            padding: 6px 12px; background: rgba(0,0,0,0.5);
+            border-radius: 20px; border: 1px solid rgba(201,169,110,0.25);
+        }
+        .top-bar h2 {
+            color: #F0D99C; font-size: 18px; letter-spacing: 3px;
+            text-shadow: 0 0 12px rgba(201,169,110,0.7);
+        }
+        .container {
+            position: relative; min-height: 100vh;
+            padding: 80px 20px 40px; z-index: 5;
+        }
+        .page-title {
+            text-align: center; color: #F0D99C; font-size: 22px;
+            letter-spacing: 4px; margin-bottom: 10px;
+            text-shadow: 0 0 16px rgba(201,169,110,0.7);
+        }
+        .page-desc {
+            text-align: center; color: #F5EEDC; font-size: 13px;
+            opacity: 0.8; margin-bottom: 28px;
+            letter-spacing: 1px; padding: 0 16px; line-height: 1.7;
+        }
+        .ar-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 18px; max-width: 680px; margin: 0 auto;
+        }
+        .ar-card {
+            position: relative;
+            min-height: 280px;
+            background:
+                linear-gradient(180deg, rgba(12, 12, 11, 0.08), rgba(16, 11, 9, 0.92) 72%),
+                var(--art) center / cover no-repeat;
+            border-radius: 4px; padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border: 1.5px solid rgba(201,169,110,0.35);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.5), 0 0 18px rgba(201,169,110,0.15);
+            cursor: pointer; transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+            text-decoration: none; color: #F5EEDC; overflow: hidden;
+        }
+        .ar-card:active { transform: scale(0.97); }
+        .ar-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(244, 213, 150, 0.82);
+            box-shadow: 0 18px 42px rgba(0,0,0,0.48), 0 0 32px rgba(201,169,110,0.26);
+        }
+        .ar-card.completed {
+            border-color: #F0D99C;
+            box-shadow: 0 0 24px rgba(201,169,110,0.65);
+        }
+        .ar-card::before {
+            position: absolute; inset: 8px;
+            border: 1px solid rgba(242, 214, 163, 0.28);
+            content: ""; pointer-events: none;
+        }
+        .ar-card::after {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, transparent 42%, rgba(10,9,8,0.88) 100%);
+            content: ""; pointer-events: none;
+        }
+        .ar-card-copy {
+            position: relative; z-index: 2; padding: 54px 22px 22px;
+            text-align: left;
+        }
+        .ar-card-index {
+            position: absolute; top: 17px; left: 18px; z-index: 3;
+            color: rgba(255, 235, 199, 0.74); font-family: Georgia, serif;
+            font-size: 9px; letter-spacing: 0.25em;
+        }
+        .ar-card-seal {
+            position: absolute; top: 16px; right: 16px; z-index: 3;
+            display: grid; width: 28px; height: 34px; place-items: center;
+            border: 1px solid rgba(255, 226, 170, 0.72);
+            color: #ffe1a5; background: rgba(130, 52, 36, 0.72);
+            font-family: "STKaiti", "KaiTi", serif; font-size: 10px;
+            line-height: 1.2; writing-mode: vertical-rl;
+        }
+        .ar-card-name {
+            font-family: "STKaiti", "KaiTi", serif;
+            color: #f1d39b; font-size: 23px; letter-spacing: 4px; margin-bottom: 7px;
+        }
+        .ar-card-tip {
+            color: rgba(244, 226, 195, 0.65); font-size: 10px; letter-spacing: 2px;
+        }
+        .ar-card .medal-mini {
+            position: absolute; top: 58px; right: 17px;
+            font-size: 11px; opacity: 0.4; transition: 0.3s; z-index: 4;
+            display: grid; width: 16px; height: 16px; place-items: center;
+            border: 1px solid currentColor; border-radius: 50%;
+        }
+        .ar-card.completed .medal-mini {
+            opacity: 1; animation: miniPop 0.5s ease;
+        }
+        @keyframes miniPop {
+            0% { transform: scale(0); } 60% { transform: scale(1.4); } 100% { transform: scale(1); }
+        }
+        .ar-tip {
+            text-align: center; color: rgba(245,238,220,0.6);
+            font-size: 12px; margin-top: 24px;
+            letter-spacing: 1px; padding: 0 20px; line-height: 1.7;
+        }
+        .toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(30, 20, 15, 0.95); color: #F0D99C;
+            padding: 16px 28px; border-radius: 14px;
+            border: 1px solid rgba(201,169,110,0.6);
+            font-size: 15px; z-index: 100;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s ease; text-align: center;
+            box-shadow: 0 8px 40px rgba(201,169,110,0.3); letter-spacing: 1px;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        @media (max-width: 380px) {
+            .ar-grid { gap: 10px; }
+            .ar-card { min-height: 230px; }
+            .ar-card-copy { padding: 46px 13px 15px; }
+            .ar-card-name { font-size: 18px; }
+        }
+        @media (max-width: 560px) {
+            .ar-grid { grid-template-columns: 1fr; max-width: 340px; }
+            .ar-card { min-height: 245px; }
+            .container { padding-top: 72px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="bg-glow"></div>
+    <div class="particles" id="particles"></div>
+    <div class="bokeh" id="bokeh"></div>
+
+    <div class="top-bar">
+        <a href="index.html?view=explore" class="back">← 返回</a>
+        <h2>AR 洞窟体验</h2>
+        <div style="width:70px"></div>
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">唤醒壁画</h1>
+        <p class="page-desc">选择一处敦煌印记，扫描图案<br>让千年前的矿物彩与飞天在你眼前苏醒</p>
+
+        <div class="ar-grid" id="arGrid">
+            <a class="ar-card" data-id="feitian1" data-name="散花飞天"
+               href="https://www.kivicube.com/scenes/OhVTv1RQxGMKnYYa9CznmyKLt2rbN4FT" target="_blank" rel="noopener noreferrer"
+               style="--art:url('images/postcard_feitian1.jpg')">
+                <span class="ar-card-index">CHAPTER 01</span>
+                <span class="ar-card-seal">散花</span>
+                <span class="medal-mini">印</span>
+                <div class="ar-card-copy">
+                    <div class="ar-card-name">散花飞天</div>
+                    <div class="ar-card-tip">点击唤醒</div>
+                </div>
+            </a>
+            <a class="ar-card" data-id="feitian2" data-name="伎乐飞天"
+               href="https://www.kivicube.com/scenes/OhVTv1RQxGMKnYYa9CznmyKLt2rbN4FT" target="_blank" rel="noopener noreferrer"
+               style="--art:url('images/postcard_feitian2.jpg')">
+                <span class="ar-card-index">CHAPTER 02</span>
+                <span class="ar-card-seal">伎乐</span>
+                <span class="medal-mini">印</span>
+                <div class="ar-card-copy">
+                    <div class="ar-card-name">伎乐飞天</div>
+                    <div class="ar-card-tip">点击唤醒</div>
+                </div>
+            </a>
+            <a class="ar-card" data-id="feitian3" data-name="九色鹿"
+               href="https://www.kivicube.com/scenes/OhVTv1RQxGMKnYYa9CznmyKLt2rbN4FT" target="_blank" rel="noopener noreferrer"
+               style="--art:url('images/postcard_feitian3.jpg')">
+                <span class="ar-card-index">CHAPTER 03</span>
+                <span class="ar-card-seal">神鹿</span>
+                <span class="medal-mini">印</span>
+                <div class="ar-card-copy">
+                    <div class="ar-card-name">九色鹿</div>
+                    <div class="ar-card-tip">点击唤醒</div>
+                </div>
+            </a>
+            <a class="ar-card" data-id="feitian4" data-name="供养人"
+               href="https://www.kivicube.com/scenes/OhVTv1RQxGMKnYYa9CznmyKLt2rbN4FT" target="_blank" rel="noopener noreferrer"
+               style="--art:url('images/postcard_feitian4.jpg')">
+                <span class="ar-card-index">CHAPTER 04</span>
+                <span class="ar-card-seal">供养</span>
+                <span class="medal-mini">印</span>
+                <div class="ar-card-copy">
+                    <div class="ar-card-name">供养人</div>
+                    <div class="ar-card-tip">点击唤醒</div>
+                </div>
+            </a>
+        </div>
+
+        <p class="ar-tip">建议在光线充足的环境下扫描卡片图案<br>获得完整的 AR 体验</p>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function createParticles() {
+            const starBox = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = 1.5 + Math.random() * 2.5;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (10 + Math.random() * 12) + 's';
+                p.style.animationDelay = (-Math.random() * 20) + 's';
+                starBox.appendChild(p);
+            }
+            const bokehBox = document.getElementById('bokeh');
+            for (let i = 0; i < 10; i++) {
+                const b = document.createElement('div');
+                b.className = 'bokeh-dot';
+                const size = 50 + Math.random() * 90;
+                b.style.width = size + 'px'; b.style.height = size + 'px';
+                b.style.left = Math.random() * 100 + '%';
+                b.style.animationDuration = (16 + Math.random() * 14) + 's';
+                b.style.animationDelay = (-Math.random() * 25) + 's';
+                b.style.filter = `blur(${4 + Math.random() * 6}px)`;
+                bokehBox.appendChild(b);
+            }
+        })();
+
+        function getCardId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('card') || 'default';
+        }
+        function getMedals() {
+            const key = 'dunhuang_medals_' + getCardId();
+            try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+        }
+        function recordMedal(id) {
+            const key = 'dunhuang_medals_' + getCardId();
+            const medals = getMedals();
+            medals[id] = { obtained: true, time: new Date().toISOString() };
+            localStorage.setItem(key, JSON.stringify(medals));
+        }
+
+        const wasArNew = !getMedals()['ar'];
+        recordMedal('ar');
+
+        const toast = document.getElementById('toast');
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+
+        if (wasArNew) {
+            setTimeout(() => showToast('已收录「AR 洞窟体验」印记'), 400);
+        }
+
+        const cards = document.querySelectorAll('.ar-card');
+        const medals = getMedals();
+        cards.forEach(card => {
+            const id = card.dataset.id;
+            if (medals[id] && medals[id].obtained) {
+                card.classList.add('completed');
+                card.querySelector('.ar-card-tip').textContent = '已唤醒';
+            }
+            card.addEventListener('click', () => {
+                if (!getMedals()[id] || !getMedals()[id].obtained) {
+                    recordMedal(id);
+                    card.classList.add('completed');
+                    card.querySelector('.ar-card-tip').textContent = '已唤醒';
+                    showToast(`已收录「${card.dataset.name}」印记`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

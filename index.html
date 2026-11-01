@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dunhuang" data-han-intensity="3" data-han-accent-families="mineral-pigment,caisson">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#160d09">
+    <link rel="icon" href="data:,">
+    <title>敦煌·灵境｜丝路寻迹</title>
+    <link rel="stylesheet" href="experience.css">
+</head>
+<body>
+    <main id="world" aria-label="敦煌灵境三维互动场景" data-han-scope>
+        <canvas id="scene-canvas"></canvas>
+        <div class="world-vignette" aria-hidden="true"></div>
+        <div class="world-grain" aria-hidden="true"></div>
+        <div id="node-layer" class="node-layer" aria-label="路线印记"></div>
+        <div class="horizon-rule" aria-hidden="true">
+            <span>MOGAO GROTTOES</span>
+            <i></i>
+            <span>鸣沙山 · 敦煌</span>
+        </div>
+    </main>
+
+    <header class="brand">
+        <a class="brand-mark" href="index.html" aria-label="返回敦煌灵境首页">
+            <span class="brand-seal">敦</span>
+            <span class="brand-copy">
+                <strong>敦煌灵境</strong>
+                <small>DUNHUANG · DIGITAL OASIS</small>
+            </span>
+        </a>
+        <div class="top-actions">
+            <button class="icon-action" id="autoTour" type="button" aria-pressed="false" aria-label="开启自动巡游">
+                <span class="action-dot"></span>
+                <span>自动巡游</span>
+            </button>
+            <button class="icon-action sound-action" id="soundToggle" type="button" aria-pressed="false" aria-label="开启环境声音">
+                <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>环境声音</span>
+            </button>
+            <button class="round-action" id="resetView" type="button" aria-label="回到初始视角" title="回到初始视角">↺</button>
+        </div>
+    </header>
+
+    <div class="compass" aria-hidden="true">
+        <span class="compass-n">北</span>
+        <i id="compassNeedle"></i>
+        <span class="compass-tick"></span>
+    </div>
+
+    <div class="chapter-counter" aria-live="polite">
+        <span id="chapterCount">未寻印记</span>
+        <b><span id="collectedCount">0</span> / 5</b>
+    </div>
+
+    <aside class="route-panel" aria-label="灵境寻迹路线">
+        <div class="route-heading">
+            <span>灵境寻迹</span>
+            <small>五处印记 · 一条丝路</small>
+        </div>
+        <div class="route-line" aria-hidden="true"></div>
+        <nav class="route-list">
+            <button class="route-node is-current" type="button" data-route="0" aria-current="step">
+                <span class="route-index">01</span>
+                <span class="route-name">散花飞天</span>
+                <i class="route-dot"></i>
+            </button>
+            <button class="route-node" type="button" data-route="1">
+                <span class="route-index">02</span>
+                <span class="route-name">伎乐飞天</span>
+                <i class="route-dot"></i>
+            </button>
+            <button class="route-node" type="button" data-route="2">
+                <span class="route-index">03</span>
+                <span class="route-name">九色鹿</span>
+                <i class="route-dot"></i>
+            </button>
+            <button class="route-node" type="button" data-route="3">
+                <span class="route-index">04</span>
+                <span class="route-name">供养人</span>
+                <i class="route-dot"></i>
+            </button>
+            <button class="route-node" type="button" data-route="4">
+                <span class="route-index">05</span>
+                <span class="route-name">入窟问境</span>
+                <i class="route-dot"></i>
+            </button>
+        </nav>
+    </aside>
+
+    <section class="chapter-card" id="chapterCard" aria-labelledby="chapterTitle" aria-hidden="true">
+        <button class="chapter-close" id="chapterClose" type="button" aria-label="关闭章节">×</button>
+        <div class="chapter-image-wrap">
+            <img id="chapterImage" src="images/postcard_feitian1.jpg" alt="">
+            <span class="chapter-image-shade" aria-hidden="true"></span>
+            <span class="chapter-stamp" id="chapterStamp">散花</span>
+            <span class="chapter-index" id="chapterIndex">CHAPTER 01</span>
+        </div>
+        <div class="chapter-copy">
+            <p class="chapter-kicker"><i></i> 灵境寻迹</p>
+            <h2 id="chapterTitle">散花飞天</h2>
+            <p class="chapter-subtitle" id="chapterSubtitle">以花雨为引，穿过千年丝路</p>
+            <p class="chapter-description" id="chapterDescription"></p>
+            <div class="chapter-actions">
+                <a class="primary-action" id="enterStory" href="feitian1.html">进入画卷 <span>→</span></a>
+                <button class="seal-action" id="collectSeal" type="button">
+                    <span class="seal-mark">印</span>
+                    <span id="collectLabel">收录此印</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <aside class="architecture-story" id="architectureStory" aria-labelledby="architectureStoryTitle" aria-live="polite" aria-hidden="true" inert>
+        <button class="architecture-story-close" id="architectureStoryClose" type="button" aria-label="关闭建筑介绍并返回全景">×</button>
+        <p class="architecture-story-kicker">
+            <span id="architectureStoryIndex">STARDUST ARCHIVE · 01</span>
+            <i></i>
+            <span id="architectureStoryTag">崖壁楼阁</span>
+        </p>
+        <h2 id="architectureStoryTitle">九层楼</h2>
+        <p class="architecture-story-subtitle" id="architectureStorySubtitle">九重檐宇，依崖而上</p>
+        <p class="architecture-story-description" id="architectureStoryDescription"></p>
+        <div class="architecture-story-facts" id="architectureStoryFacts" aria-label="建筑意象关键词"></div>
+        <footer class="architecture-story-footer">
+            <span id="architectureStoryHint">点击其他楼阁可切换</span>
+            <button id="architectureStoryOverview" type="button">返回全景</button>
+        </footer>
+    </aside>
+
+    <div class="explore-hint" id="exploreHint">
+        <span class="hint-mouse" aria-hidden="true"></span>
+        <span>拖动环游　·　滚轮远近　·　点击画卷</span>
+    </div>
+
+    <p class="particle-whisper" id="particleWhisper" aria-live="polite">
+        三座楼阁隐于星尘 · 点击楼体聚合，点上舞者起舞
+    </p>
+
+    <div class="scene-caption" id="sceneCaption">
+        <span>01</span>
+        <p><b>鸣沙入梦</b><small>让流沙、月光与洞窟在眼前苏醒</small></p>
+    </div>
+
+    <aside class="journey-story" id="journeyStory" aria-live="polite">
+        <span class="journey-story-index" id="journeyStoryIndex">00 / 05</span>
+        <div class="journey-story-copy">
+            <b id="journeyStoryTitle">星路启程</b>
+            <small id="journeyStoryText">沿一线星尘，进入敦煌灵境</small>
+        </div>
+        <div class="journey-story-progress" id="journeyStoryProgress" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+        </div>
+    </aside>
+
+    <section class="intro-screen" id="introScreen" aria-labelledby="introTitle">
+        <div class="intro-ornament top" aria-hidden="true"></div>
+        <p class="intro-eyebrow">A JOURNEY THROUGH DUNHUANG</p>
+        <h1 id="introTitle"><span>敦</span>煌<span>灵</span>境</h1>
+        <div class="intro-flourish" aria-hidden="true">
+            <i></i><b>千年一瞬</b><i></i>
+        </div>
+        <p class="intro-lead">循一线月光，越过鸣沙山的脊线与莫高窟的崖壁，<br>让星尘重筑楼阁，在月牙泉与五处敦煌印记之间醒来。</p>
+        <button class="enter-world" id="enterWorld" type="button">
+            <span>步入灵境</span>
+            <i>→</i>
+        </button>
+        <p class="intro-note">建议开启声音，获得完整漫游体验</p>
+        <div class="intro-ornament bottom" aria-hidden="true"></div>
+    </section>
+
+    <div class="loading-state" id="loadingState" role="status" aria-live="polite">
+        <span class="loading-ring"></span>
+        <span>正在铺开敦煌长卷</span>
+    </div>
+
+    <div class="webgl-error" id="webglError" role="alert" hidden>
+        <strong>当前浏览器暂时无法打开三维灵境</strong>
+        <p>请使用最新版 Chrome 或 Edge，并通过 VS Code 的 Live Server 打开此页面。</p>
+        <a href="index-classic.html">进入经典版</a>
+    </div>
+
+    <audio id="bgMusic" loop preload="none">
+        <source src="audio/bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <noscript>
+        <p class="noscript-note">请开启 JavaScript 以体验三维敦煌灵境。</p>
+    </noscript>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./vendor/three.module.min.js"
+        }
+    }
+    </script>
+    <script src="vendor/three.min.js"></script>
+    <script src="dunhuang-scene.js"></script>
+</body>
+</html>
